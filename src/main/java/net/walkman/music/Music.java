@@ -58,9 +58,6 @@ public class Music {
                         output.accept(BLANK_CASSETTE.get());
 
 
-                        CassetteRegistry.discoverDiscs();
-
-
                         CassetteRegistry.getAll().forEach((id, data) -> {
                             net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(CASSETTE.get());
                             CassetteItem.setRecordableId(stack, id);
@@ -86,9 +83,6 @@ public class Music {
     public Music(IEventBus modEventBus, ModContainer modContainer) {
         System.out.println("Music mod constructor started!");
 
-        // 1️⃣ Initial discovery of discs
-        CassetteRegistry.discoverDiscs();
-
         // 2️⃣ Register registries
         ITEMS.register(modEventBus);
         CREATIVE_TABS.register(modEventBus);
@@ -111,8 +105,7 @@ public class Music {
 
     private void onCommonSetup(net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
-            System.out.println("[DEBUG_LOG] Common setup running, rediscovering discs...");
-            CassetteRegistry.discoverDiscs();
+            System.out.println("[DEBUG_LOG] Common setup running");
         });
     }
 

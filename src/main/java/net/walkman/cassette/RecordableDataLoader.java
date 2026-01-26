@@ -29,6 +29,10 @@ public class RecordableDataLoader extends SimpleJsonResourceReloadListener {
 
         CassetteRegistry.clear();
 
+        // 1. Discover vanilla/modded discs first (so they can be overridden by JSON if needed)
+        CassetteRegistry.discoverDiscs();
+
+        // 2. Load JSON recordables
         jsonMap.forEach((id, json) -> {
             try {
                 RecordableData data =
@@ -43,8 +47,6 @@ public class RecordableDataLoader extends SimpleJsonResourceReloadListener {
             }
         });
 
-
-        CassetteRegistry.discoverDiscs();
-        System.out.println("Auto-discovered music discs. Total recordables: " + CassetteRegistry.getAll().size());
+        System.out.println("Total recordables: " + CassetteRegistry.getAll().size());
     }
 }

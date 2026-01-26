@@ -22,8 +22,6 @@ public class CassetteRegistry {
 
     public static void discoverDiscs() {
         System.out.println("[DEBUG_LOG] Discovering music discs...");
-        int before = RECORDABLES.size();
-
 
         var musicDiscsTag = net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM,
             ResourceLocation.withDefaultNamespace("music_discs"));
@@ -31,7 +29,6 @@ public class CassetteRegistry {
         BuiltInRegistries.ITEM.entrySet().forEach(entry -> {
             var item = entry.getValue();
             var itemStack = new ItemStack(item);
-
 
             if (itemStack.has(DataComponents.JUKEBOX_PLAYABLE) ||
                 item.components().has(DataComponents.JUKEBOX_PLAYABLE) ||
@@ -41,16 +38,20 @@ public class CassetteRegistry {
 
                 // Don't override JSON-defined ones
                 boolean alreadyPresent = false;
-                for (RecordableData data : RECORDABLES.values()) {
-                    if (data.discItem() != null && data.discItem().equals(itemId)) {
-                        alreadyPresent = true;
-                        break;
+                if (RECORDABLES.containsKey(itemId)) {
+                    alreadyPresent = true;
+                } else {
+                    for (RecordableData data : RECORDABLES.values()) {
+                        if (data.discItem() != null && data.discItem().equals(itemId)) {
+                            alreadyPresent = true;
+                            break;
+                        }
                     }
                 }
 
                 if (!alreadyPresent) {
                     // Extract display name
-                    String displayName = itemStack.getHoverName().getString();
+                    String displayName = item.getName(itemStack).getString();
 
                     // Try to resolve sound event
                     ResourceLocation soundLoc = null;
@@ -73,7 +74,6 @@ public class CassetteRegistry {
                 }
             }
         });
-        System.out.println("[DEBUG_LOG] Discovery finished. Added " + (RECORDABLES.size() - before) + " new discs. Total: " + RECORDABLES.size());
     }
 
     public static void clear() {
