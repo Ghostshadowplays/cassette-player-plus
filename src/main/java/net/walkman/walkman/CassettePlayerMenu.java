@@ -17,9 +17,10 @@ public class CassettePlayerMenu extends AbstractContainerMenu {
     private final ItemStackHandler itemHandler;
     private final Inventory playerInventory;
     private float volume = 1.0f;
+    private boolean repeat = false;
 
     public CassettePlayerMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
-        this(containerId, playerInventory, playerInventory.player.getMainHandItem());
+        this(containerId, playerInventory, playerInventory.player.getItemInHand(buf.readBoolean() ? net.minecraft.world.InteractionHand.MAIN_HAND : net.minecraft.world.InteractionHand.OFF_HAND));
     }
 
     public CassettePlayerMenu(int containerId, Inventory playerInventory, ItemStack cassettePlayerStackParam) {
@@ -42,18 +43,18 @@ public class CassettePlayerMenu extends AbstractContainerMenu {
         loadFromStack();
 
         // Walkman slot
-        this.addSlot(new SlotItemHandler(itemHandler, 0, 80, 35));
+        this.addSlot(new SlotItemHandler(itemHandler, 0, 80, 21));
 
         // Player Inventory
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 9; ++j) {
-                this.addSlot(new Slot(playerInventory, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
+                this.addSlot(new Slot(playerInventory, j + i * 9 + 9, 8 + j * 18, 51 + i * 18));
             }
         }
 
         // Player Hotbar
         for (int k = 0; k < 9; ++k) {
-            this.addSlot(new Slot(playerInventory, k, 8 + k * 18, 142));
+            this.addSlot(new Slot(playerInventory, k, 8 + k * 18, 109));
         }
     }
 
@@ -61,11 +62,31 @@ public class CassettePlayerMenu extends AbstractContainerMenu {
         return volume;
     }
 
+    public boolean isRepeat() {
+        return repeat;
+    }
+
+    public void setRepeat(boolean repeat) {
+        this.repeat = repeat;
+    }
+
     @Override
     public boolean clickMenuButton(Player player, int id) {
         if (id >= 0 && id <= 100) {
             this.volume = id / 100f;
             saveToStack();
+            return true;
+        } else if (id == 101) {
+            this.repeat = !this.repeat;
+            saveToStack();
+            // Inform client handler if on client side
+            if (player.level().isClientSide) {
+                try {
+                    Class<?> cls = Class.forName("net.walkman.walkman.CassettePlayerSoundHandler");
+                    java.lang.reflect.Method m = cls.getMethod("setRepeat", java.util.UUID.class, boolean.class);
+                    m.invoke(null, player.getUUID(), this.repeat);
+                } catch (Throwable ignored) {}
+            }
             return true;
         }
         return false;
@@ -80,6 +101,16 @@ public class CassettePlayerMenu extends AbstractContainerMenu {
             if (tag.contains("Volume")) {
                 this.volume = tag.getFloat("Volume");
             }
+            if (tag.contains("Repeat")) {
+                this.repeat = tag.getBoolean("Repeat");
+                if (playerInventory.player.level().isClientSide) {
+                    try {
+                        Class<?> cls = Class.forName("net.walkman.walkman.CassettePlayerSoundHandler");
+                        java.lang.reflect.Method m = cls.getMethod("setRepeat", java.util.UUID.class, boolean.class);
+                        m.invoke(null, playerInventory.player.getUUID(), this.repeat);
+                    } catch (Throwable ignored) {}
+                }
+            }
         }
     }
 
@@ -89,6 +120,7 @@ public class CassettePlayerMenu extends AbstractContainerMenu {
             customData -> customData.update(tag -> {
                 tag.put("Cassette", itemHandler.serializeNBT(playerInventory.player.level().registryAccess()));
                 tag.putFloat("Volume", this.volume);
+                tag.putBoolean("Repeat", this.repeat);
             }));
     }
 
@@ -125,6 +157,6 @@ public class CassettePlayerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return true;
+        return !this.cassettePlayerStack.isEmpty() && (player.getMainHandItem() == this.cassettePlayerStack || player.getOffhandItem() == this.cassettePlayerStack);
     }
 }

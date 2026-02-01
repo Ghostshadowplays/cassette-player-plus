@@ -11,7 +11,7 @@ public class ModDataLoaders {
     }
 
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
-        System.out.println("Registering RecordableDataLoader");
+        System.out.println("[DEBUG_LOG] Registering RecordableDataLoader");
         event.addListener(new RecordableDataLoader());
     }
 }

@@ -18,15 +18,12 @@ public class CassettePlayerItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (hand != InteractionHand.MAIN_HAND) {
-            return InteractionResultHolder.pass(stack);
-        }
 
         if (!level.isClientSide) {
             player.openMenu(new SimpleMenuProvider(
                 (containerId, playerInventory, p) -> new CassettePlayerMenu(containerId, playerInventory, stack),
-                Component.translatable("item.music.cassette_player")
-            ));
+                stack.getHoverName()
+            ), buf -> buf.writeBoolean(hand == InteractionHand.MAIN_HAND));
         }
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());

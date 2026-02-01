@@ -10,8 +10,8 @@ import net.walkman.registry.ModMenus;
 import net.walkman.registry.ModItems;
 import net.walkman.cassette.CassetteItem;
 import net.walkman.walkman.CassettePlayerItem;
-import net.walkman.walkman.CassettePlayerScreen;
 import net.minecraft.world.item.Item;
+import net.minecraft.resources.ResourceLocation;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -48,6 +48,10 @@ public class Music {
             ITEMS.register("cassette",
                     () -> new CassetteItem(new Item.Properties().stacksTo(1)));
 
+    public static final DeferredItem<Item> CASSETTE_CASE =
+            ITEMS.register("cassette_case",
+                    () -> new net.walkman.cassette.CassetteCaseItem(new Item.Properties().stacksTo(1)));
+
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> CASSETTE_TAB =
             CREATIVE_TABS.register("cassette_tab", () -> CreativeModeTab.builder()
@@ -55,6 +59,7 @@ public class Music {
                     .icon(() -> CASSETTE_PLAYER.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
                         output.accept(CASSETTE_PLAYER.get());
+                        output.accept(CASSETTE_CASE.get());
                         output.accept(BLANK_CASSETTE.get());
 
 
@@ -70,9 +75,14 @@ public class Music {
                                 if (playable != null) {
                                     stack.set(net.minecraft.core.component.DataComponents.JUKEBOX_PLAYABLE, playable);
                                 }
-                                // Use the disc's name for the cassette
+                            }
+                            
+                            // Always use the data's display name if available, even if no disc item
+                            if (data.displayName() != null && !data.displayName().isEmpty()) {
                                 CassetteItem.setDisplayName(stack, data.displayName());
                             }
+                            
+                            CassetteItem.assignRandomTexture(stack);
 
                             output.accept(stack);
                         });
@@ -81,7 +91,7 @@ public class Music {
 
 
     public Music(IEventBus modEventBus, ModContainer modContainer) {
-        System.out.println("Music mod constructor started!");
+        System.out.println("[DEBUG_LOG] Music mod constructor started!");
 
         // 2️⃣ Register registries
         ITEMS.register(modEventBus);
@@ -97,7 +107,9 @@ public class Music {
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
 
         // 5️⃣ Client setup
-        modEventBus.addListener(this::onClientSetup);
+        if (net.neoforged.fml.loading.FMLEnvironment.dist == net.neoforged.api.distmarker.Dist.CLIENT) {
+            ClientModEvents.init(modEventBus);
+        }
 
         // 6️⃣ Common setup
         modEventBus.addListener(this::onCommonSetup);
@@ -107,10 +119,6 @@ public class Music {
         event.enqueueWork(() -> {
             System.out.println("[DEBUG_LOG] Common setup running");
         });
-    }
-
-    private void onClientSetup(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
-        event.register(ModMenus.CASSETTE_PLAYER_MENU.get(), CassettePlayerScreen::new);
     }
 
     private void onRegisterCommands(RegisterCommandsEvent event) {
@@ -136,6 +144,7 @@ public class Music {
                         CassetteItem.setRecordableId(stack, id);
                         
                         if (player.getInventory().add(stack)) {
+                            CassetteItem.assignRandomTexture(stack);
                             source.sendSuccess(() -> Component.literal("Gave 1 cassette (" + id + ") to " + player.getScoreboardName()), true);
                             return 1;
                         } else {

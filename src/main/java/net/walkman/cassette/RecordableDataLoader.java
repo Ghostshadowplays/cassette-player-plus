@@ -24,12 +24,11 @@ public class RecordableDataLoader extends SimpleJsonResourceReloadListener {
                          ResourceManager manager,
                          ProfilerFiller profiler) {
 
-        System.out.println("RecordableDataLoader fired!");
-        System.out.println("Found recordables: " + jsonMap.keySet());
+        System.out.println("[DEBUG_LOG] RecordableDataLoader fired!");
+        System.out.println("[DEBUG_LOG] Found recordables: " + jsonMap.keySet());
 
         CassetteRegistry.clear();
-
-        // 1. Discover vanilla/modded discs first (so they can be overridden by JSON if needed)
+        // discoverDiscs will be called either here or during first crafting attempt
         CassetteRegistry.discoverDiscs();
 
         // 2. Load JSON recordables
