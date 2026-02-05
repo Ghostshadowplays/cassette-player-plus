@@ -11,6 +11,8 @@ public class ModItems {
     public static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS = 
             DeferredRegister.create(Registries.RECIPE_SERIALIZER, Music.MODID);
 
+
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<CassetteRecipe>> CASSETTE_RECIPE = 
             RECIPE_SERIALIZERS.register("cassette_recipe", () -> CassetteRecipe.SERIALIZER);
 }
+

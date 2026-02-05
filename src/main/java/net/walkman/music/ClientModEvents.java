@@ -7,6 +7,7 @@ import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.resources.ResourceLocation;
 import net.walkman.cassette.CassetteItem;
 import net.walkman.walkman.CassettePlayerScreen;
+import net.walkman.walkman.WalkmanConfig;
 import net.walkman.registry.ModMenus;
 
 public class ClientModEvents {
@@ -16,10 +17,23 @@ public class ClientModEvents {
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {
+        WalkmanConfig.load();
         event.enqueueWork(() -> {
             ItemProperties.register(Music.CASSETTE.get(), 
                 ResourceLocation.fromNamespaceAndPath(Music.MODID, "texture_index"), 
                 (stack, level, entity, seed) -> (float)CassetteItem.getTextureIndex(stack));
+
+            ItemProperties.register(Music.CASSETTE.get(), 
+                ResourceLocation.fromNamespaceAndPath(Music.MODID, "visual_set"), 
+                (stack, level, entity, seed) -> WalkmanConfig.getVisualSet() == WalkmanConfig.VisualSet.RETRO ? 1.0f : 0.0f);
+
+            ItemProperties.register(Music.CASSETTE_PLAYER.get(), 
+                ResourceLocation.fromNamespaceAndPath(Music.MODID, "visual_set"), 
+                (stack, level, entity, seed) -> WalkmanConfig.getVisualSet() == WalkmanConfig.VisualSet.RETRO ? 1.0f : 0.0f);
+
+            ItemProperties.register(Music.BLANK_CASSETTE.get(), 
+                ResourceLocation.fromNamespaceAndPath(Music.MODID, "visual_set"), 
+                (stack, level, entity, seed) -> WalkmanConfig.getVisualSet() == WalkmanConfig.VisualSet.RETRO ? 1.0f : 0.0f);
         });
     }
 

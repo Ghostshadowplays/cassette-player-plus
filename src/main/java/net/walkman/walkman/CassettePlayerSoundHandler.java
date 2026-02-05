@@ -60,48 +60,36 @@ public class CassettePlayerSoundHandler {
                 this.stop();
                 return;
             }
-
-            if (this.isStopped()) {
-                if (!wasStoppedPreviously && tickCount > 5) {
-                    System.out.println("[DEBUG_LOG] Sound instance for player " + playerUUID + " reported isStopped() = true for the first time after " + tickCount + " ticks");
-                    wasStoppedPreviously = true;
-                    handleSoundEnd(playerUUID);
-                }
-            } else {
-                wasStoppedPreviously = false;
-            }
         }
     }
 
     private static void handleSoundEnd(UUID playerUUID) {
+        // Remove the finished sound from the playing sounds map
+        PLAYING_SOUNDS.remove(playerUUID);
+
         if (MIX_TAPE_TRACKS.containsKey(playerUUID)) {
             List<ResourceLocation> tracks = MIX_TAPE_TRACKS.get(playerUUID);
             int currentIndex = MIX_TAPE_INDEX.getOrDefault(playerUUID, 0);
             int nextIndex = currentIndex + 1;
             boolean repeat = REPEAT_MODES.getOrDefault(playerUUID, false);
             
-            System.out.println("[DEBUG_LOG] handleSoundEnd for " + playerUUID + ". Current index: " + currentIndex + ", Next index: " + nextIndex + ", Repeat: " + repeat + ", Total tracks: " + tracks.size());
-            
             if (nextIndex < tracks.size()) {
                 playTrackAtIndex(playerUUID, nextIndex);
             } else {
                 if (repeat) {
-                    System.out.println("[DEBUG_LOG] Looping back to start for " + playerUUID);
                     playTrackAtIndex(playerUUID, 0);
                 } else {
-                    System.out.println("[DEBUG_LOG] End of playlist reached for " + playerUUID);
                     stopMusic(playerUUID);
                 }
             }
         } else {
-            System.out.println("[DEBUG_LOG] No tracks found for " + playerUUID + " in handleSoundEnd");
+            stopMusic(playerUUID);
         }
     }
 
     private static void playTrackAtIndex(UUID playerUUID, int index) {
         List<ResourceLocation> tracks = MIX_TAPE_TRACKS.get(playerUUID);
         if (tracks == null || index < 0 || index >= tracks.size()) {
-            System.out.println("[DEBUG_LOG] playTrackAtIndex: Invalid tracks or index for " + playerUUID);
             return;
         }
 
@@ -110,7 +98,6 @@ public class CassettePlayerSoundHandler {
         float volume = PLAYER_VOLUMES.getOrDefault(playerUUID, 1.0f);
         
         ResourceLocation soundLoc = resolveSoundLocation(trackId);
-        System.out.println("[DEBUG_LOG] Playing track at index " + index + ": " + trackId + " -> sound: " + soundLoc);
         
         // Stop current sound without clearing the playlist
         SoundInstance current = PLAYING_SOUNDS.remove(playerUUID);
@@ -123,7 +110,6 @@ public class CassettePlayerSoundHandler {
             Minecraft.getInstance().getSoundManager().play(nextSound);
             PLAYING_SOUNDS.put(playerUUID, nextSound);
         } else {
-            System.out.println("[DEBUG_LOG] Could not resolve sound location for " + trackId + ", skipping to next if available.");
             // Instead of stopping, try to move to next track if it's a mix tape
             int nextIdx = index + 1;
             if (nextIdx < tracks.size()) {
@@ -136,35 +122,25 @@ public class CassettePlayerSoundHandler {
 
     public static void skipTrack(UUID playerUUID) {
         if (MIX_TAPE_TRACKS.containsKey(playerUUID)) {
-            int currentIndex = MIX_TAPE_INDEX.getOrDefault(playerUUID, 0);
-            int nextIndex = currentIndex + 1;
             List<ResourceLocation> tracks = MIX_TAPE_TRACKS.get(playerUUID);
+            if (tracks.isEmpty()) return;
             
-            if (nextIndex < tracks.size()) {
-                System.out.println("[DEBUG_LOG] Manual skip to next track for " + playerUUID);
-                playTrackAtIndex(playerUUID, nextIndex);
-            } else {
-                // Loop back to start or stop? Let's loop for now as it's a "Next" button
-                System.out.println("[DEBUG_LOG] Manual skip reached end, looping to start for " + playerUUID);
-                playTrackAtIndex(playerUUID, 0);
-            }
+            int currentIndex = MIX_TAPE_INDEX.getOrDefault(playerUUID, 0);
+            int nextIndex = (currentIndex + 1) % tracks.size();
+            
+            playTrackAtIndex(playerUUID, nextIndex);
         }
     }
 
     public static void previousTrack(UUID playerUUID) {
         if (MIX_TAPE_TRACKS.containsKey(playerUUID)) {
-            int currentIndex = MIX_TAPE_INDEX.getOrDefault(playerUUID, 0);
-            int prevIndex = currentIndex - 1;
+            List<ResourceLocation> tracks = MIX_TAPE_TRACKS.get(playerUUID);
+            if (tracks.isEmpty()) return;
             
-            if (prevIndex >= 0) {
-                System.out.println("[DEBUG_LOG] Manual skip to previous track for " + playerUUID);
-                playTrackAtIndex(playerUUID, prevIndex);
-            } else {
-                // Loop to end
-                List<ResourceLocation> tracks = MIX_TAPE_TRACKS.get(playerUUID);
-                System.out.println("[DEBUG_LOG] Manual skip reached start, looping to end for " + playerUUID);
-                playTrackAtIndex(playerUUID, tracks.size() - 1);
-            }
+            int currentIndex = MIX_TAPE_INDEX.getOrDefault(playerUUID, 0);
+            int prevIndex = (currentIndex - 1 + tracks.size()) % tracks.size();
+            
+            playTrackAtIndex(playerUUID, prevIndex);
         }
     }
 
@@ -185,7 +161,6 @@ public class CassettePlayerSoundHandler {
     }
 
     public static void playMusic(UUID playerUUID, ItemStack cassetteStack, float volume) {
-        System.out.println("[DEBUG_LOG] playMusic called for " + playerUUID + " with volume " + volume);
         // Clear previous playlist state before starting new playback
         MIX_TAPE_TRACKS.remove(playerUUID);
         MIX_TAPE_INDEX.remove(playerUUID);
@@ -209,8 +184,6 @@ public class CassettePlayerSoundHandler {
                      tracksTag = tag.getList("Tracks", net.minecraft.nbt.Tag.TAG_STRING);
                 }
                 
-                System.out.println("[DEBUG_LOG] Loading Mix Tape tracks. Raw count: " + tracksTag.size());
-                
                 for (int i = 0; i < tracksTag.size(); i++) {
                     var element = tracksTag.get(i);
                     ResourceLocation resolvedSound = null;
@@ -227,28 +200,21 @@ public class CassettePlayerSoundHandler {
                         if (resolvedSound == null && id != null) resolvedSound = resolveSoundLocation(id);
                         if (resolvedSound == null && songId != null) resolvedSound = resolveSoundLocation(songId);
                         
-                        System.out.println("[DEBUG_LOG] Track " + i + ": id=" + id + ", song=" + songId + ", storedSound=" + storedSound + " -> resolved: " + resolvedSound);
                     } else if (element instanceof net.minecraft.nbt.StringTag stringTag) {
                         ResourceLocation id = ResourceLocation.tryParse(stringTag.getAsString());
                         if (id != null) resolvedSound = resolveSoundLocation(id);
-                        System.out.println("[DEBUG_LOG] Track " + i + " (string): " + id + " -> resolved: " + resolvedSound);
                     }
                     
                     if (resolvedSound != null) {
                         tracks.add(resolvedSound);
-                    } else {
-                        System.out.println("[DEBUG_LOG] FAILED to resolve sound for track " + i);
                     }
                 }
                 
-                System.out.println("[DEBUG_LOG] Detected Mix Tape with " + tracks.size() + " resolved tracks.");
                 if (!tracks.isEmpty()) {
                     MIX_TAPE_TRACKS.put(playerUUID, tracks);
                     // playTrackAtIndex will set the index and start playback
                     playTrackAtIndex(playerUUID, 0);
                     return;
-                } else {
-                    System.out.println("[DEBUG_LOG] Mix Tape has no valid tracks, falling back to standard playback.");
                 }
             }
         }
@@ -257,18 +223,15 @@ public class CassettePlayerSoundHandler {
         CassetteRegistry.discoverDiscs();
 
         ResourceLocation recordableId = CassetteItem.getRecordableId(cassetteStack);
-        System.out.println("[DEBUG_LOG] Standard cassette detected. RecordableId: " + recordableId);
         ResourceLocation soundLoc = null;
 
         var playable = cassetteStack.get(net.minecraft.core.component.DataComponents.JUKEBOX_PLAYABLE);
         if (playable != null) {
             soundLoc = resolveSoundFromPlayable(playable);
-            System.out.println("[DEBUG_LOG] Found JukeboxPlayable. Resolved soundLoc: " + soundLoc);
         }
 
         if (soundLoc == null && recordableId != null) {
             soundLoc = resolveSoundLocation(recordableId);
-            System.out.println("[DEBUG_LOG] Fallback to resolveSoundLocation(recordableId): " + soundLoc);
         }
 
         if (soundLoc != null) {
@@ -279,8 +242,6 @@ public class CassettePlayerSoundHandler {
             MIX_TAPE_INDEX.put(playerUUID, 0);
             
             playCassetteSound(playerUUID, soundLoc, volume);
-        } else {
-            System.out.println("[DEBUG_LOG] FAILED to resolve sound location for cassette.");
         }
     }
 
@@ -341,7 +302,6 @@ public class CassettePlayerSoundHandler {
                 return ResourceLocation.fromNamespaceAndPath(songId.getNamespace(), "music_disc." + songId.getPath());
             }
         } catch (Exception e) {
-            System.out.println("[DEBUG_LOG] Failed to resolve sound from playable: " + e.getMessage());
         }
         return null;
     }
@@ -354,15 +314,12 @@ public class CassettePlayerSoundHandler {
              return recordableId;
         }
 
-        System.out.println("[DEBUG_LOG] resolveSoundLocation for: " + recordableId);
-
         // Ensure discs are discovered on the client side
         CassetteRegistry.discoverDiscs();
 
         // 1. Try CassetteRegistry (mapped by Item ID)
         RecordableData data = CassetteRegistry.get(recordableId);
         if (data != null && data.soundEvent() != null) {
-            System.out.println("[DEBUG_LOG] [Strategy 1] Resolved from CassetteRegistry: " + data.soundEvent());
             return data.soundEvent();
         }
 
@@ -375,14 +332,12 @@ public class CassettePlayerSoundHandler {
                 if (song != null) {
                     try {
                         ResourceLocation loc = song.soundEvent().value().getLocation();
-                        System.out.println("[DEBUG_LOG] [Strategy 2] Resolved from JukeboxSong registry: " + loc);
                         return loc;
                     } catch (Throwable t) {
                         try {
                             java.lang.reflect.Method locationMethod = song.soundEvent().value().getClass().getMethod("location");
                             ResourceLocation loc = (ResourceLocation) locationMethod.invoke(song.soundEvent().value());
                             if (loc != null) {
-                                System.out.println("[DEBUG_LOG] [Strategy 2] Resolved from JukeboxSong registry (reflection): " + loc);
                                 return loc;
                             }
                         } catch (Throwable ignored) {}
@@ -404,7 +359,6 @@ public class CassettePlayerSoundHandler {
                 if (playable != null) {
                     ResourceLocation sound = resolveSoundFromPlayable(playable);
                     if (sound != null) {
-                        System.out.println("[DEBUG_LOG] [Strategy 3] Resolved from Item JukeboxPlayable: " + sound);
                         return sound;
                     }
                 }
@@ -417,22 +371,16 @@ public class CassettePlayerSoundHandler {
 
         if (path.startsWith("music_disc_")) {
             String subPath = path.substring("music_disc_".length());
-            ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(namespace, "music_disc." + subPath);
-            System.out.println("[DEBUG_LOG] [Strategy 4] Guessed from music_disc_ prefix: " + loc);
-            return loc;
+            return ResourceLocation.fromNamespaceAndPath(namespace, "music_disc." + subPath);
         } else if (!path.contains(".")) {
             // If it doesn't look like a direct sound event ID, assume it's a name we need to prefix
-            ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(namespace, "music_disc." + path);
-            System.out.println("[DEBUG_LOG] [Strategy 4] Guessed with music_disc. prefix: " + loc);
-            return loc;
+            return ResourceLocation.fromNamespaceAndPath(namespace, "music_disc." + path);
         } else {
-            System.out.println("[DEBUG_LOG] [Strategy 4] Returning original ID as last resort: " + recordableId);
             return recordableId;
         }
     }
 
     private static void playCassetteSound(UUID playerUUID, ResourceLocation soundLocation, float volume) {
-        System.out.println("[DEBUG_LOG] playCassetteSound: " + soundLocation + " for player " + playerUUID);
         CassetteSoundInstance sound = new CassetteSoundInstance(soundLocation, volume, playerUUID);
         Minecraft.getInstance().getSoundManager().play(sound);
         PLAYING_SOUNDS.put(playerUUID, sound);
@@ -453,6 +401,15 @@ public class CassettePlayerSoundHandler {
         if (mc.player == null) return;
 
         UUID uuid = mc.player.getUUID();
+
+        // 1. Check for sound completion (New robust mechanism)
+        SoundInstance playing = PLAYING_SOUNDS.get(uuid);
+        if (playing instanceof CassetteSoundInstance cassetteSound) {
+            // Only trigger if it's actually finished. A small tickCount delay prevents instant skip on start
+            if (cassetteSound.tickCount > 5 && (cassetteSound.isStopped() || !mc.getSoundManager().isActive(cassetteSound))) {
+                handleSoundEnd(uuid);
+            }
+        }
 
         if (!PLAYING_SOUNDS.containsKey(uuid)) return;
 

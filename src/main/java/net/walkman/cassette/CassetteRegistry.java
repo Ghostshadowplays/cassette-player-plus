@@ -26,7 +26,6 @@ public class CassetteRegistry {
 
 
     public static void discoverDiscs() {
-        System.out.println("[DEBUG_LOG] Discovering music discs...");
         discoveryAttempted = true;
 
         var musicDiscsTag = net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM,
@@ -38,9 +37,6 @@ public class CassetteRegistry {
                 .map(e -> java.util.Map.entry(e.getKey().location(), e.getValue()))
                 .toList());
 
-        System.out.println("[DEBUG_LOG] Total items in registry: " + items.size());
-
-        int discCount = 0;
         for (var entry : items) {
             var item = entry.getValue();
             var itemStack = new ItemStack(item);
@@ -62,12 +58,7 @@ public class CassetteRegistry {
             }
 
             if (isJukeboxPlayable || isMusicDiscTag || matchesFallback) {
-                discCount++;
                 ResourceLocation itemId = entry.getKey();
-                System.out.println("[DEBUG_LOG]   Potential disc found: " + itemId + 
-                                   " | JukeboxPlayable: " + isJukeboxPlayable + 
-                                   " | InTag: " + isMusicDiscTag +
-                                   " | Fallback: " + matchesFallback);
 
                 // Don't override JSON-defined ones unless we are on client and existing has no sound
                 boolean alreadyPresent = false;
@@ -166,13 +157,8 @@ public class CassetteRegistry {
                         } catch (Exception ignored) {}
                     }
 
-                    // Only register if we have a sound location or it's a confirmed music disc
-                    // This prevents "disc_fragment" etc. from filling the registry if they don't have music
                     if (soundLoc != null || isJukeboxPlayable || isMusicDiscTag) {
                         RECORDABLES.put(itemId, new RecordableData(soundLoc, displayName, itemId));
-                        if (soundLoc != null) {
-                            System.out.println("[DEBUG_LOG] Discovered disc: " + itemId + " (" + displayName + ") sound: " + soundLoc);
-                        }
                     }
                 }
             }

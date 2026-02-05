@@ -17,7 +17,7 @@ public class CassetteCaseItem extends Item {
 
     @Override
     public boolean overrideOtherStackedOnMe(ItemStack stack, ItemStack other, net.minecraft.world.inventory.Slot slot, net.minecraft.world.inventory.ClickAction action, Player player, net.minecraft.world.entity.SlotAccess access) {
-        if (action == net.minecraft.world.inventory.ClickAction.PRIMARY && !other.isEmpty()) {
+        if (action == net.minecraft.world.inventory.ClickAction.SECONDARY && !other.isEmpty()) {
             boolean isCassette = other.is(net.walkman.music.Music.CASSETTE.get());
             boolean isBlank = other.is(net.walkman.music.Music.BLANK_CASSETTE.get());
             

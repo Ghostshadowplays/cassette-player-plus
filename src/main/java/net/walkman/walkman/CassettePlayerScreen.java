@@ -15,7 +15,7 @@ public class CassettePlayerScreen extends AbstractContainerScreen<CassettePlayer
             ResourceLocation.withDefaultNamespace("textures/gui/container/hopper.png");
 
     private static final ResourceLocation CASSETTE_PLAYER_LOGO_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(Music.MODID, "textures/gui/cassette_player.png");
+            ResourceLocation.fromNamespaceAndPath(Music.MODID, "textures/gui/retro_player.png");
 
     private VolumeSlider volumeSlider;
     private Button repeatButton;

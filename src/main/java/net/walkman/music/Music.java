@@ -11,7 +11,6 @@ import net.walkman.registry.ModItems;
 import net.walkman.cassette.CassetteItem;
 import net.walkman.walkman.CassettePlayerItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.resources.ResourceLocation;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -23,10 +22,11 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
+
 @Mod(Music.MODID)
 public class Music {
 
-    public static final String MODID = "music";
+    public static final String MODID = "cassette_player_plus";
 
 
     public static final DeferredRegister.Items ITEMS =
@@ -52,15 +52,15 @@ public class Music {
             ITEMS.register("cassette_case",
                     () -> new net.walkman.cassette.CassetteCaseItem(new Item.Properties().stacksTo(1)));
 
-
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> CASSETTE_TAB =
             CREATIVE_TABS.register("cassette_tab", () -> CreativeModeTab.builder()
-                    .title(Component.translatable("itemGroup.music.cassette_tab"))
+                    .title(Component.translatable("itemGroup.cassette_player_plus.cassette_tab"))
                     .icon(() -> CASSETTE_PLAYER.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
                         output.accept(CASSETTE_PLAYER.get());
                         output.accept(CASSETTE_CASE.get());
                         output.accept(BLANK_CASSETTE.get());
+
 
 
                         CassetteRegistry.getAll().forEach((id, data) -> {

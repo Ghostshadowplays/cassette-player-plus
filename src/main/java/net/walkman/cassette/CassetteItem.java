@@ -147,9 +147,18 @@ public class CassetteItem extends Item {
             !stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).copyTag().contains("TextureIndex")) {
             
             int index = new java.util.Random().nextInt(4); // 0 to 3
+
+            // If we are on the client and in RETRO mode, stop the randomization (default to 0)
+            if (net.neoforged.fml.loading.FMLEnvironment.dist == net.neoforged.api.distmarker.Dist.CLIENT) {
+                if (net.walkman.walkman.WalkmanConfig.getVisualSet() == net.walkman.walkman.WalkmanConfig.VisualSet.RETRO) {
+                    index = 0;
+                }
+            }
+
+            final int finalIndex = index;
             stack.update(net.minecraft.core.component.DataComponents.CUSTOM_DATA,
                 net.minecraft.world.item.component.CustomData.EMPTY,
-                customData -> customData.update(tag -> tag.putInt("TextureIndex", index)));
+                customData -> customData.update(tag -> tag.putInt("TextureIndex", finalIndex)));
         }
     }
 
