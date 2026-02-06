@@ -32,12 +32,17 @@ public class Config {
                             List.of("minecraft:iron_ingot"),
                             Config::validateItemName);
 
+    private static final ModConfigSpec.BooleanValue ENABLE_BOOMBOX_DANCING =
+            BUILDER.comment("Whether zombies and skeletons dance near a playing Boombox at night")
+                    .define("enableBoomboxDancing", true);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     public static boolean logDirtBlock;
     public static int magicNumber;
     public static String magicNumberIntroduction;
     public static Set<Item> items;
+    public static boolean enableBoomboxDancing;
 
     private static boolean validateItemName(final Object obj) {
         return obj instanceof String itemName &&
@@ -45,10 +50,17 @@ public class Config {
     }
 
 
+    public static void setEnableBoomboxDancing(boolean value) {
+        ENABLE_BOOMBOX_DANCING.set(value);
+        ENABLE_BOOMBOX_DANCING.save();
+        enableBoomboxDancing = value;
+    }
+
     public static void onLoad(final ModConfigEvent event) {
         logDirtBlock = LOG_DIRT_BLOCK.get();
         magicNumber = MAGIC_NUMBER.get();
         magicNumberIntroduction = MAGIC_NUMBER_INTRODUCTION.get();
+        enableBoomboxDancing = ENABLE_BOOMBOX_DANCING.get();
 
         items = ITEM_STRINGS.get().stream()
                 .map(itemName -> BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemName)))

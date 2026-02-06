@@ -1,0 +1,8 @@
+{
+  "cassette_tape_sound_effect": {
+    "category": "record",
+    "sounds": [
+      "cassette_player_plus:cassette_tape_sound_effect"
+    ]
+  }
+}

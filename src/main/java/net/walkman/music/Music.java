@@ -10,6 +10,7 @@ import net.walkman.registry.ModMenus;
 import net.walkman.registry.ModItems;
 import net.walkman.cassette.CassetteItem;
 import net.walkman.walkman.CassettePlayerItem;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 
 import net.minecraft.core.registries.Registries;
@@ -20,14 +21,25 @@ import net.walkman.cassette.CassetteRegistry;
 
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.CompoundTagArgument;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
+
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.item.BlockItem;
+import net.neoforged.neoforge.registries.DeferredBlock;
 
 @Mod(Music.MODID)
 public class Music {
 
     public static final String MODID = "cassette_player_plus";
 
+    public static final DeferredRegister.Blocks BLOCKS =
+            DeferredRegister.createBlocks(MODID);
 
     public static final DeferredRegister.Items ITEMS =
             DeferredRegister.createItems(MODID);
@@ -35,6 +47,25 @@ public class Music {
     public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
+    public static final DeferredRegister<net.minecraft.sounds.SoundEvent> SOUND_EVENTS =
+            DeferredRegister.create(Registries.SOUND_EVENT, MODID);
+
+    public static final DeferredRegister<net.minecraft.world.level.block.entity.BlockEntityType<?>> BLOCK_ENTITIES =
+            DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, MODID);
+
+
+    public static final DeferredBlock<Block> BOOMBOX =
+            BLOCKS.register("boombox",
+                    () -> new BoomboxBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion()));
+
+    public static final DeferredHolder<net.minecraft.world.level.block.entity.BlockEntityType<?>, net.minecraft.world.level.block.entity.BlockEntityType<BoomboxBlockEntity>> BOOMBOX_BE =
+            BLOCK_ENTITIES.register("boombox", () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(BoomboxBlockEntity::new, BOOMBOX.get()).build(null));
+
+    public static final DeferredHolder<net.minecraft.sounds.SoundEvent, net.minecraft.sounds.SoundEvent> CASSETTE_TAPE_SOUND_EFFECT =
+            SOUND_EVENTS.register("cassette_tape_sound_effect", () -> net.minecraft.sounds.SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MODID, "cassette_tape_sound_effect")));
+
+    public static final DeferredItem<BlockItem> BOOMBOX_ITEM =
+            ITEMS.registerSimpleBlockItem("boombox", BOOMBOX);
 
     public static final DeferredItem<Item> BLANK_CASSETTE =
             ITEMS.registerSimpleItem("blank_cassette",
@@ -57,6 +88,7 @@ public class Music {
                     .title(Component.translatable("itemGroup.cassette_player_plus.cassette_tab"))
                     .icon(() -> CASSETTE_PLAYER.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
+                        output.accept(BOOMBOX_ITEM.get());
                         output.accept(CASSETTE_PLAYER.get());
                         output.accept(CASSETTE_CASE.get());
                         output.accept(BLANK_CASSETTE.get());
@@ -93,9 +125,15 @@ public class Music {
     public Music(IEventBus modEventBus, ModContainer modContainer) {
         System.out.println("[DEBUG_LOG] Music mod constructor started!");
 
+        modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.COMMON, Config.SPEC);
+        modEventBus.addListener(Config::onLoad);
+
         // 2️⃣ Register registries
+        BLOCKS.register(modEventBus);
         ITEMS.register(modEventBus);
         CREATIVE_TABS.register(modEventBus);
+        SOUND_EVENTS.register(modEventBus);
+        BLOCK_ENTITIES.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);
         ModItems.RECIPE_SERIALIZERS.register(modEventBus);
         System.out.println("[DEBUG_LOG] Registries registered to mod bus.");
@@ -122,6 +160,27 @@ public class Music {
     }
 
     private void onRegisterCommands(RegisterCommandsEvent event) {
+        event.getDispatcher().register(
+            Commands.literal("cassette_player_plus")
+                .requires(source -> source.hasPermission(2))
+                .then(Commands.literal("config")
+                    .then(Commands.literal("enableBoomboxDancing")
+                        .then(Commands.argument("value", BoolArgumentType.bool())
+                            .executes(context -> {
+                                boolean value = BoolArgumentType.getBool(context, "value");
+                                Config.setEnableBoomboxDancing(value);
+                                context.getSource().sendSuccess(() -> Component.literal("Boombox dancing is now " + (value ? "enabled" : "disabled")), true);
+                                return 1;
+                            })
+                        )
+                        .executes(context -> {
+                            context.getSource().sendSuccess(() -> Component.literal("Boombox dancing is currently " + (Config.enableBoomboxDancing ? "enabled" : "disabled")), false);
+                            return 1;
+                        })
+                    )
+                )
+        );
+
         event.getDispatcher().register(
             Commands.literal("givecassette")
                 .requires(source -> source.hasPermission(2))

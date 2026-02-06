@@ -4,6 +4,7 @@
   "item.cassette_player_plus.blank_cassette": "Blank Cassette",
   "item.cassette_player_plus.cassette": "Cassette",
   "item.cassette_player_plus.cassette_case": "Cassette Case",
+  "block.cassette_player_plus.boombox": "Boombox",
   "key.categories.walkman": "Walkman",
   "key.walkman.open_config": "Open Walkman Config"
 }
