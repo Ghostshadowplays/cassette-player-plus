@@ -102,44 +102,54 @@ public class BoomboxBlock extends Block implements EntityBlock {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof BoomboxBlockEntity boombox) {
-            // PICKUP MECHANIC: Sneak + Right Click
+            // SNEAK + RIGHT CLICK
             if (player.isSecondaryUseActive()) {
-                if (!level.isClientSide) {
-                    ItemStack boomboxStack = new ItemStack(this);
-                    
-                    // Save BE data to the item stack
-                    CompoundTag beData = boombox.saveWithFullMetadata(level.registryAccess());
-                    boomboxStack.set(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA, net.minecraft.world.item.component.CustomData.of(beData));
-                    
-                    if (level.isClientSide) {
-                        // On client, stop the world sound for this position
-                        net.walkman.walkman.CassettePlayerSoundHandler.stopMusic(
-                            java.util.UUID.nameUUIDFromBytes(("boombox-" + pos.getX() + "_" + pos.getY() + "_" + pos.getZ()).getBytes())
-                        );
+                ItemStack cassetteInBoombox = boombox.getCassette();
+                if (!cassetteInBoombox.isEmpty()) {
+                    // EJECT CASSETTE
+                    if (!level.isClientSide) {
+                        player.getInventory().placeItemBackInInventory(cassetteInBoombox);
+                        boombox.setCassette(ItemStack.EMPTY);
+                        boombox.setPlaying(false);
+                        boombox.startSoundTimer(0);
+                        player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.walkman.cassette_ejected").withStyle(net.minecraft.ChatFormatting.YELLOW), true);
                     } else {
-                        // Also notify client to stop the world sound
+                        net.walkman.walkman.CassettePlayerSoundHandler.stopMusic("boombox-" + pos.getX() + "_" + pos.getY() + "_" + pos.getZ());
+                    }
+                    return InteractionResult.sidedSuccess(level.isClientSide);
+                } else {
+                    // PICKUP MECHANIC: Sneak + Right Click when empty
+                    if (!level.isClientSide) {
+                        ItemStack boomboxStack = new ItemStack(this);
+                        
+                        // Save BE data to the item stack
+                        CompoundTag beData = boombox.saveWithFullMetadata(level.registryAccess());
+                        boomboxStack.set(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA, net.minecraft.world.item.component.CustomData.of(beData));
+                        
                         level.playSound(null, pos, net.minecraft.sounds.SoundEvents.ITEM_PICKUP, net.minecraft.sounds.SoundSource.BLOCKS, 1.0f, 1.0f);
-                        // Force a block update so clients see it's being removed/cleared
                         level.sendBlockUpdated(pos, state, state, 3);
-                    }
 
-                    if (!player.getInventory().add(boomboxStack)) {
-                        player.drop(boomboxStack, false);
+                        if (!player.getInventory().add(boomboxStack)) {
+                            player.drop(boomboxStack, false);
+                        }
+                        
+                        boombox.setCassette(ItemStack.EMPTY);
+                        level.removeBlock(pos, false);
+                    } else {
+                        net.walkman.walkman.CassettePlayerSoundHandler.stopMusic("boombox-" + pos.getX() + "_" + pos.getY() + "_" + pos.getZ());
                     }
-                    
-                    // Clear the cassette from the BE so onRemove doesn't drop it twice
-                    boombox.setCassette(ItemStack.EMPTY);
-                    level.removeBlock(pos, false);
+                    return InteractionResult.sidedSuccess(level.isClientSide);
                 }
-                return InteractionResult.sidedSuccess(level.isClientSide);
             }
 
+            // NORMAL RIGHT CLICK (no sneak)
             ItemStack inHand = player.getItemInHand(InteractionHand.MAIN_HAND);
             ItemStack cassetteInBoombox = boombox.getCassette();
 
             if (cassetteInBoombox.isEmpty()) {
                 if (inHand.is(Music.CASSETTE.get())) {
                     if (!level.isClientSide) {
+                        String trackName = inHand.getHoverName().getString();
                         boombox.setCassette(inHand.copy());
                         inHand.shrink(1);
                         level.playSound(null, pos, Music.CASSETTE_TAPE_SOUND_EFFECT.get(), net.minecraft.sounds.SoundSource.BLOCKS, 1.0f, 1.0f);
@@ -147,21 +157,31 @@ public class BoomboxBlock extends Block implements EntityBlock {
                         boombox.setPlaying(false);
                         // Delay playing by setting a timer (approx 160 ticks for the sound effect which is 8 seconds)
                         boombox.startSoundTimer(160);
+                        player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.walkman.cassette_inserted", trackName).withStyle(net.minecraft.ChatFormatting.GREEN), true);
                     }
                     return InteractionResult.sidedSuccess(level.isClientSide);
                 }
             } else {
+                // Toggle Play / Pause on normal right-click
                 if (!level.isClientSide) {
-                    player.getInventory().placeItemBackInInventory(cassetteInBoombox);
-                    boombox.setCassette(ItemStack.EMPTY);
-                    boombox.setPlaying(false);
-                    // Also clear timer to be safe
-                    boombox.startSoundTimer(0);
+                    boolean newPlaying = !boombox.isPlaying();
+                    boombox.setPlaying(newPlaying);
+                    if (newPlaying) {
+                        player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.walkman.playing").withStyle(net.minecraft.ChatFormatting.GREEN), true);
+                    } else {
+                        player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.walkman.paused").withStyle(net.minecraft.ChatFormatting.YELLOW), true);
+                    }
                 }
                 return InteractionResult.sidedSuccess(level.isClientSide);
             }
         }
         return InteractionResult.PASS;
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext context, java.util.List<net.minecraft.network.chat.Component> tooltip, net.minecraft.world.item.TooltipFlag flag) {
+        tooltip.add(net.minecraft.network.chat.Component.translatable("tooltip.walkman.controls_hint").withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
+        super.appendHoverText(stack, context, tooltip, flag);
     }
 
     @Override

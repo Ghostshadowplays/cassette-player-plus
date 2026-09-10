@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="runClient (Application)" type="Application" factoryName="Application">
+    <option name="ALTERNATIVE_JRE_PATH" value="21" />
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+    <option name="MAIN_CLASS_NAME" value="net.neoforged.devlaunch.Main" />
+    <module name="cassette-player-plus.main" />
+    <option name="PROGRAM_PARAMETERS" value="@$PROJECT_DIR$/build/moddev/clientRunProgramArgs.txt" />
+    <option name="VM_PARAMETERS" value="@$PROJECT_DIR$/build/moddev/clientRunClasspath.txt @$PROJECT_DIR$/build/moddev/clientRunVmArgs.txt -Dfml.modFolders=cassette_player_plus%%$PROJECT_DIR$/build/classes/java/main;cassette_player_plus%%$PROJECT_DIR$/build/resources/main" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/run" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+      <option name="Gradle.BeforeRunTask" enabled="true" tasks="prepareClientRun" externalProjectPath="$PROJECT_DIR$" vmOptions="" scriptParameters="" />
+    </method>
+  </configuration>
+</component>

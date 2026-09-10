@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "cassette_player_plus:item/cassette_player"
+  },
+  "overrides": [
+    {
+      "predicate": { "cassette_player_plus:visual_set": 1.0 },
+      "model": "cassette_player_plus:item/retro_player"
+    }
+  ]
+}

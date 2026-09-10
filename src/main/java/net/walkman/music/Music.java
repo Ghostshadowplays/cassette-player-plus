@@ -68,8 +68,8 @@ public class Music {
             ITEMS.registerSimpleBlockItem("boombox", BOOMBOX);
 
     public static final DeferredItem<Item> BLANK_CASSETTE =
-            ITEMS.registerSimpleItem("blank_cassette",
-                    new Item.Properties().stacksTo(16));
+            ITEMS.register("blank_cassette",
+                    () -> new net.walkman.cassette.BlankCassetteItem(new Item.Properties().stacksTo(16)));
 
     public static final DeferredItem<Item> CASSETTE_PLAYER =
             ITEMS.register("cassette_player",

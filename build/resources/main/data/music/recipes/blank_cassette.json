@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IPI"
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "P": { "item": "minecraft:paper" }
+  },
+  "result": {
+    "count": 1,
+    "id": "music:blank_cassette"
+  }
+}

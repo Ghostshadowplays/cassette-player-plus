@@ -20,8 +20,53 @@ public class KeyBindings {
             "key.categories.walkman"
     );
 
+    public static final KeyMapping PLAY_PAUSE = new KeyMapping(
+            "key.walkman.play_pause",
+            KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_UNKNOWN,
+            "key.categories.walkman"
+    );
+
+    public static final KeyMapping STOP = new KeyMapping(
+            "key.walkman.stop",
+            KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_UNKNOWN,
+            "key.categories.walkman"
+    );
+
+    public static final KeyMapping EJECT = new KeyMapping(
+            "key.walkman.eject",
+            KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_UNKNOWN,
+            "key.categories.walkman"
+    );
+
+    public static final KeyMapping NEXT_TRACK = new KeyMapping(
+            "key.walkman.next_track",
+            KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_PERIOD,
+            "key.categories.walkman"
+    );
+
+    public static final KeyMapping PREV_TRACK = new KeyMapping(
+            "key.walkman.prev_track",
+            KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_COMMA,
+            "key.categories.walkman"
+    );
+
     @SubscribeEvent
     public static void registerKeys(RegisterKeyMappingsEvent event) {
         event.register(OPEN_CONFIG);
+        event.register(PLAY_PAUSE);
+        event.register(STOP);
+        event.register(EJECT);
+        event.register(NEXT_TRACK);
+        event.register(PREV_TRACK);
     }
 }

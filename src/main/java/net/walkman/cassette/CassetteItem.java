@@ -71,10 +71,12 @@ public class CassetteItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        boolean hasTrack = false;
         if (stack.has(net.minecraft.core.component.DataComponents.CUSTOM_DATA)) {
             var tag = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).copyTag();
             if (tag.getBoolean("IsMixTape")) {
-                tooltip.add(Component.literal("Custom Mix Tape").withStyle(ChatFormatting.GOLD));
+                hasTrack = true;
+                tooltip.add(Component.translatable("tooltip.walkman.mixtape").withStyle(ChatFormatting.GOLD));
                 if (tag.contains("Tracks")) {
                     net.minecraft.nbt.ListTag tracks = tag.getList("Tracks", net.minecraft.nbt.Tag.TAG_COMPOUND);
                     boolean isCompound = !tracks.isEmpty();
@@ -110,19 +112,35 @@ public class CassetteItem extends Item {
                                 name = trackId.getPath();
                             }
 
-                            tooltip.add(Component.literal("- " + name).withStyle(ChatFormatting.GRAY));
+                            tooltip.add(Component.literal("• " + name).withStyle(ChatFormatting.GRAY));
                         }
                     }
                 }
+            } else if (tag.contains("DisplayName")) {
+                String name = tag.getString("DisplayName");
+                String cleaned = cleanName(name);
+                if (!cleaned.equals("Unknown Track")) {
+                    hasTrack = true;
+                    tooltip.add(Component.translatable("tooltip.walkman.track", cleaned).withStyle(ChatFormatting.AQUA));
+                }
             }
         }
+
         ResourceLocation id = getRecordableId(stack);
         if (id != null) {
             RecordableData data = CassetteRegistry.get(id);
-            if (data == null) {
+            if (data != null) {
+                String cleaned = cleanName(data.displayName());
+                if (!hasTrack && !cleaned.equals("Unknown Track")) {
+                    hasTrack = true;
+                    tooltip.add(Component.translatable("tooltip.walkman.track", cleaned).withStyle(ChatFormatting.AQUA));
+                }
+            } else if (!hasTrack) {
                 tooltip.add(Component.literal(id.toString()).withStyle(ChatFormatting.DARK_GRAY));
             }
         }
+
+        tooltip.add(Component.translatable("tooltip.walkman.controls_hint").withStyle(ChatFormatting.DARK_GRAY));
     }
 
     public static ResourceLocation getRecordableId(ItemStack stack) {

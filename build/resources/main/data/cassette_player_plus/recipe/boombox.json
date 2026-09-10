@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "III",
+    "IJI",
+    "RCR"
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "J": { "item": "minecraft:jukebox" },
+    "R": { "item": "minecraft:redstone" },
+    "C": { "item": "minecraft:copper_ingot" }
+  },
+  "result": {
+    "count": 1,
+    "id": "cassette_player_plus:boombox"
+  }
+}

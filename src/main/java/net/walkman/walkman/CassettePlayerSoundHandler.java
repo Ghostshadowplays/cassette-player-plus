@@ -263,6 +263,61 @@ public class CassettePlayerSoundHandler {
         }
     }
 
+    public static boolean isPlaying(UUID playerUUID) {
+        return PLAYING_SOUNDS.containsKey(playerUUID.toString());
+    }
+
+    public static boolean togglePlayback(UUID playerUUID) {
+        String sourceId = playerUUID.toString();
+        if (PLAYING_SOUNDS.containsKey(sourceId)) {
+            stopMusic(sourceId);
+            return false;
+        } else {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null) {
+                // Check handheld boombox first
+                ItemStack main = mc.player.getMainHandItem();
+                ItemStack off = mc.player.getOffhandItem();
+                if (main.is(net.walkman.music.Music.BOOMBOX_ITEM.get()) && isPlayingInHand(main)) {
+                    var tag = main.get(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA).copyTag();
+                    ItemStack cassette = ItemStack.parse(mc.level.registryAccess(), tag.getCompound("Cassette")).orElse(ItemStack.EMPTY);
+                    if (!cassette.isEmpty()) {
+                        playMusic(sourceId, cassette, 1.0f);
+                        return true;
+                    }
+                }
+                if (off.is(net.walkman.music.Music.BOOMBOX_ITEM.get()) && isPlayingInHand(off)) {
+                    var tag = off.get(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA).copyTag();
+                    ItemStack cassette = ItemStack.parse(mc.level.registryAccess(), tag.getCompound("Cassette")).orElse(ItemStack.EMPTY);
+                    if (!cassette.isEmpty()) {
+                        playMusic(sourceId, cassette, 1.0f);
+                        return true;
+                    }
+                }
+                // Check Walkman
+                ItemStack walkman = getWalkmanWithCassette(mc.player);
+                if (!walkman.isEmpty()) {
+                    playMusic(sourceId, walkman, PLAYER_VOLUMES.getOrDefault(sourceId, 1.0f));
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    public static void stopAllMusic() {
+        Minecraft mc = Minecraft.getInstance();
+        for (SoundInstance sound : PLAYING_SOUNDS.values()) {
+            if (sound != null) {
+                mc.getSoundManager().stop(sound);
+            }
+        }
+        PLAYING_SOUNDS.clear();
+        MIX_TAPE_TRACKS.clear();
+        MIX_TAPE_INDEX.remove(null);
+        MIX_TAPE_INDEX.clear();
+    }
+
     public static void toggleMusic(UUID playerUUID, ItemStack cassetteStack, float volume) {
         String sourceId = playerUUID.toString();
         if (PLAYING_SOUNDS.containsKey(sourceId)) {
@@ -497,8 +552,17 @@ public class CassettePlayerSoundHandler {
     }
 
     private static void playCassetteSound(String sourceId, ResourceLocation soundLocation, float volume) {
+        net.minecraft.core.BlockPos pos = null;
         net.minecraft.world.entity.player.Player attachedPlayer = null;
-        if (!sourceId.startsWith("boombox-")) {
+        if (sourceId.startsWith("boombox-")) {
+            String posStr = sourceId.substring("boombox-".length());
+            String[] parts = posStr.split("_");
+            if (parts.length == 3) {
+                try {
+                    pos = new net.minecraft.core.BlockPos(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+                } catch (Exception ignored) {}
+            }
+        } else {
             try {
                 UUID playerUUID = UUID.fromString(sourceId);
                 attachedPlayer = Minecraft.getInstance().level.getPlayerByUUID(playerUUID);
@@ -512,7 +576,7 @@ public class CassettePlayerSoundHandler {
                 }
             } catch (IllegalArgumentException ignored) {}
         }
-        CassetteSoundInstance sound = new CassetteSoundInstance(soundLocation, volume, sourceId, null, attachedPlayer);
+        CassetteSoundInstance sound = new CassetteSoundInstance(soundLocation, volume, sourceId, pos, attachedPlayer);
         Minecraft.getInstance().getSoundManager().play(sound);
         PLAYING_SOUNDS.put(sourceId, sound);
     }
@@ -743,6 +807,33 @@ public class CassettePlayerSoundHandler {
                 handleSoundEnd(playerSourceId);
             }
         }
+    }
+
+    public static ItemStack getWalkmanWithCassette(net.minecraft.world.entity.player.Player player) {
+        Minecraft mc = Minecraft.getInstance();
+        if (player == null) return ItemStack.EMPTY;
+        for (ItemStack stack : player.getInventory().items) {
+            if (stack.getItem() instanceof CassettePlayerItem && hasCassette(stack, mc)) {
+                return stack;
+            }
+        }
+        for (ItemStack stack : player.getInventory().offhand) {
+            if (stack.getItem() instanceof CassettePlayerItem && hasCassette(stack, mc)) {
+                return stack;
+            }
+        }
+        for (ItemStack stack : player.getInventory().armor) {
+            if (stack.getItem() instanceof CassettePlayerItem && hasCassette(stack, mc)) {
+                return stack;
+            }
+        }
+        if (player.containerMenu != null) {
+            ItemStack carried = player.containerMenu.getCarried();
+            if (carried.getItem() instanceof CassettePlayerItem && hasCassette(carried, mc)) {
+                return carried;
+            }
+        }
+        return ItemStack.EMPTY;
     }
 
     private static boolean isPlayingInHand(ItemStack stack) {

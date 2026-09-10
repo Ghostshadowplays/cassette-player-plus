@@ -1,0 +1,24 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "cassette_player_plus:item/cassette"
+  },
+  "overrides": [
+    {
+      "predicate": { "cassette_player_plus:visual_set": 1.0 },
+      "model": "cassette_player_plus:item/retro_cassette"
+    },
+    {
+      "predicate": { "cassette_player_plus:texture_index": 1.0, "cassette_player_plus:visual_set": 0.0 },
+      "model": "cassette_player_plus:item/cassette2"
+    },
+    {
+      "predicate": { "cassette_player_plus:texture_index": 2.0, "cassette_player_plus:visual_set": 0.0 },
+      "model": "cassette_player_plus:item/cassette3"
+    },
+    {
+      "predicate": { "cassette_player_plus:texture_index": 3.0, "cassette_player_plus:visual_set": 0.0 },
+      "model": "cassette_player_plus:item/cassette4"
+    }
+  ]
+}

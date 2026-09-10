@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "cassette_player_plus:block/boombox" },
+    "facing=south": { "model": "cassette_player_plus:block/boombox", "y": 180 },
+    "facing=west": { "model": "cassette_player_plus:block/boombox", "y": 270 },
+    "facing=east": { "model": "cassette_player_plus:block/boombox", "y": 90 }
+  }
+}
